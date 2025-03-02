@@ -1,0 +1,93 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+local observing = false
+local currentIndex = 1
+local playerList = {}
+
+-- GUI
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local camButton = Instance.new("TextButton", screenGui)
+local leftArrow = Instance.new("TextButton", screenGui)
+local rightArrow = Instance.new("TextButton", screenGui)
+local nameLabel = Instance.new("TextLabel", screenGui)
+
+camButton.Size = UDim2.new(0, 100, 0, 50)
+camButton.Position = UDim2.new(0.9, 0, 0.05, 0)
+camButton.Text = "📷"
+
+leftArrow.Size = UDim2.new(0, 50, 0, 50)
+leftArrow.Position = UDim2.new(0.05, 0, 0.9, 0)
+leftArrow.Text = "⬅️"
+leftArrow.Visible = false
+
+rightArrow.Size = UDim2.new(0, 50, 0, 50)
+rightArrow.Position = UDim2.new(0.15, 0, 0.9, 0)
+rightArrow.Text = "➡️"
+rightArrow.Visible = false
+
+nameLabel.Size = UDim2.new(0, 200, 0, 50)
+nameLabel.Position = UDim2.new(0.4, 0, 0.05, 0)
+nameLabel.Text = ""
+nameLabel.Visible = false
+
+-- Atualiza a lista de jogadores
+local function updatePlayerList()
+    playerList = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(playerList, p)
+        end
+    end
+end
+
+-- Alternar visão entre os jogadores
+local function observePlayer(index)
+    if playerList[index] and playerList[index].Character then
+        local target = playerList[index].Character:FindFirstChild("HumanoidRootPart")
+        if target then
+            camera.CameraType = Enum.CameraType.Follow
+            camera.CameraSubject = playerList[index].Character:FindFirstChild("Humanoid")
+            nameLabel.Text = playerList[index].Name
+            nameLabel.Visible = true
+        end
+    end
+end
+
+-- Alternar modo de observação
+local function toggleObserving()
+    observing = not observing
+    if observing then
+        updatePlayerList()
+        currentIndex = 1
+        if #playerList > 0 then
+            observePlayer(currentIndex)
+            leftArrow.Visible = true
+            rightArrow.Visible = true
+        end
+    else
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+        leftArrow.Visible = false
+        rightArrow.Visible = false
+        nameLabel.Visible = false
+    end
+end
+
+-- Eventos de clique
+camButton.MouseButton1Click:Connect(toggleObserving)
+leftArrow.MouseButton1Click:Connect(function()
+    if observing and currentIndex > 1 then
+        currentIndex = currentIndex - 1
+        observePlayer(currentIndex)
+    end
+end)
+rightArrow.MouseButton1Click:Connect(function()
+    if observing and currentIndex < #playerList then
+        currentIndex = currentIndex + 1
+        observePlayer(currentIndex)
+    end
+end)
